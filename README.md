@@ -4,7 +4,7 @@
  
 ## Code example 
 Imagine you have a rest api with a following controller.
-```cshap
+```csharp
     [ApiController]
     [Route("api/[controller]/[action]")]
     public class DbController : ControllerBase
