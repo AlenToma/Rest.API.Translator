@@ -14,8 +14,13 @@ Imagine you have a rest api with a following controller.
      return firstName + lastName;
      }
      
+     [HttpGet]
+     public async Task<string> GetLastName(){
+     .... your code
+     }
+     
      [HttpPost]
-     public User SaveUser(User user){
+     public void SaveUser(User user){
       .... your code
      }
     }
@@ -30,13 +35,24 @@ And lets assume that the `baseUrl` for our rest api is `http://test.com`
 [Route(relativeUrl: "api/")]
 public interface IDbController{
 string GetName(string firstName, string lastName);
+
+Task<string> GetLastName();
+
+// another example to GetLastName
+[Route(relativeUrl: "GetLastName")]
+string GetlstName();
+
 [Route(httpMethod: MethodType.JSONPOST)]
-User SaveUser(User user);
+Task SaveUser(User user);
 }
 ```
 Now we would like to use the current interface to make a call for our rest api using `Rest.API.Translator`
 ```csharp
     using (var db = new APIController<IDbController>(_baseUrl)){
       var name = db.Execute(x=> x.GetName("alen", "toma"));
+      // here is how you handle async methods
+      var lstName= db.GetLastName().Await();
+      // or simple 
+      var lstName= await db.GetLastName();
     }
 ```
