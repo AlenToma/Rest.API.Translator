@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29123.88
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rest.API.Translator", "..\source\Rest.API.Translator.csproj", "{242F1D06-77E6-4346-94C0-E8AC6B5FB2EA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{242F1D06-77E6-4346-94C0-E8AC6B5FB2EA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{242F1D06-77E6-4346-94C0-E8AC6B5FB2EA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{242F1D06-77E6-4346-94C0-E8AC6B5FB2EA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{242F1D06-77E6-4346-94C0-E8AC6B5FB2EA}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {82FE8F27-12CE-4CDF-8276-06DA348BF9A1}
+	EndGlobalSection
+EndGlobal
