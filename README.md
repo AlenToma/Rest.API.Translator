@@ -1,6 +1,6 @@
 # Rest.API.Translator
  
- Rest.API.Translator is a smal library that translate interface to valid rest api calls.
+`Rest.API.Translator` is a smal library that translate interface to valid rest api calls.
  So instead of using url for each methods, you only use interface and expression to build a valid call to your rest api.
  
 ## Code example 
