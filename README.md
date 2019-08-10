@@ -26,7 +26,7 @@ Imagine you have a rest api with a following controller.
     }
 ```
 
-With `Rest.API.Translator` you could build an interface to the current controller above with ease and start your call.
+With `Rest.API.Translator` you could build an interface to the current controller above with ease and start making your calls.
 
 First build an interface to the current restapi.
 And lets assume that the `baseUrl` for our rest api is `http://test.com` 
@@ -47,7 +47,7 @@ string GetlstName();
 Task SaveUser(User user);
 }
 ```
-Now we would like to use the current interface to make a call for our rest api using `Rest.API.Translator`
+Now we would could use the current interface to make a calls for our rest api using `Rest.API.Translator`
 ```csharp
     using (var db = new APIController<IDbController>(_baseUrl)){
       var name = db.Execute(x=> x.GetName("alen", "toma"));
