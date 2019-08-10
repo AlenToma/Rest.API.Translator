@@ -38,7 +38,7 @@ string GetName(string firstName, string lastName);
 
 Task<string> GetLastName();
 
-// another example to GetLastName
+// another example to GetLastName using a diffrent method name and none async method
 [Route(relativeUrl: "GetLastName")]
 string GetlstName();
 
