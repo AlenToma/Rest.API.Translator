@@ -24,7 +24,7 @@ Imagine you have a rest api with a following controller.
 With `Rest.API.Translator` you could build an interface to the current controller above with ease and start your call.
 
 First build an interface to the current restapi.
-And lets assume that the `baseUrl` for our rest api is `http://test` 
+And lets assume that the `baseUrl` for our rest api is `http://test.com` 
 
 ```csharp
 [Route(relativeUrl: "api/")]
