@@ -9,7 +9,7 @@ Imagine you have a rest api with a following controller.
     [Route("api/[controller]/[action]")]
     public class DbController : ControllerBase
     {
-     [HttpGet]
+     [HttpPost]
      public string GetName(string firstName, string lastName){
      return firstName + lastName;
      }
@@ -34,6 +34,7 @@ And lets assume that the `baseUrl` for our rest api is `http://test.com`
 ```csharp
 [Route(relativeUrl: "api/")]
 public interface IDbController{
+[Route(httpMethod: MethodType.Post)]
 string GetName(string firstName, string lastName);
 
 Task<string> GetLastName();
