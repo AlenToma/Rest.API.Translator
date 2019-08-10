@@ -1,10 +1,9 @@
 # Rest.API.Translator
  
-`Rest.API.Translator` is a smal library that translate interface to valid rest api calls.
- So instead of using url for each methods, you only use interface and expression to build a valid call to your rest api.
+`Rest.API.Translator` is a small library that translate interface to valid rest api calls. So instead of using url for each methods, you only use interface and expression to build a valid call to your rest api.
  
 ## Code example 
-Imagin you have a rest api with a fallowing controller.
+Imagine you have a rest api with a following controller.
 ```cshap
     [ApiController]
     [Route("api/[controller]/[action]")]
