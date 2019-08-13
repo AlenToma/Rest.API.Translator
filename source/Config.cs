@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq.Expressions;
+using System.Reflection;
 
 namespace Rest.API.Translator
 {
@@ -16,7 +17,13 @@ namespace Rest.API.Translator
         {
             _cachedMethodRoute.Clear();
             _cachedMethodInformation.Clear();
+            _cachedTRoutes.Clear();
         }
+
+        /// <summary>
+        /// Cached interface routes
+        /// </summary>
+        protected static InternalDictionary<Type, Route> _cachedTRoutes = new InternalDictionary<Type, Route>();
 
         /// <summary>
         /// Cached MethodInformation
@@ -28,19 +35,46 @@ namespace Rest.API.Translator
         /// </summary>
         protected static InternalDictionary<string, Route> _cachedMethodRoute = new InternalDictionary<string, Route>();
         /// <summary>
-        /// Add route attribute dynamicly, to a method
+        /// Add or override route attribute dynamicly, to a method
         /// Those settings will be saved in a static variable and its a global settings.
         /// So you only add those once, when your application start/restart.
         /// </summary>
-        /// <typeparam name="PController"></typeparam>
-        /// <param name="expression"></param>
-        /// <param name="route">Route to be added </param>
-        public Config<T> AddMethodRoute<PController>(Expression<Func<T, PController>> expression, Route route)
+        /// <param name="nameofMethod"></param>
+        /// <param name="relativeUrl">api/ or ../api its a realtive path to the baseUrl</param>
+        /// <param name="httpMethod"> Default Get</param>
+        /// <param name="fullUrl"> As full path , will ignore the baseUri and use the relativeUrl as full path. fullUrl above the interface will mean that it will ignore the interface name and only use the reltiveurl </param>
+        /// <param name="parameterIntendFormat">Instead of ?Name=test it will be /test</param>
+        /// <returns></returns>
+        public Config<T> AddMethodRoute(
+            string nameofMethod,
+            string relativeUrl = null,
+            MethodType httpMethod = MethodType.GET,
+            bool fullUrl = false,
+            bool parameterIntendFormat = false)
         {
-            if (route == null)
-                throw new Exception("route cant be null");
-            var key = GenerateKey(expression);
+            var route = new Route(relativeUrl, httpMethod, fullUrl, parameterIntendFormat);
+            var method = typeof(T).GetMethod(nameofMethod);
+            var key = GenerateKey(method);
             _cachedMethodRoute.Add(key, route, true);
+            return this;
+        }
+
+        /// <summary>
+        /// Add or override route attribute dynamicly to the interface
+        /// </summary>
+        /// <param name="relativeUrl">api/ or ../api its a realtive path to the baseUrl</param>
+        /// <param name="httpMethod"> Default Get</param>
+        /// <param name="fullUrl"> As full path , will ignore the baseUri and use the relativeUrl as full path. fullUrl above the interface will mean that it will ignore the interface name and only use the reltiveurl </param>
+        /// <param name="parameterIntendFormat">Instead of ?Name=test it will be /test</param>
+        /// <returns></returns>
+        public Config<T> AddInterfaceRoute(
+            string relativeUrl = null,
+            MethodType httpMethod = MethodType.GET,
+            bool fullUrl = false,
+            bool parameterIntendFormat = false)
+        {
+            var route = new Route(relativeUrl, httpMethod, fullUrl, parameterIntendFormat);
+            _cachedTRoutes.Add(typeof(T), route, true);
             return this;
         }
 
@@ -54,7 +88,18 @@ namespace Rest.API.Translator
         {
             MethodCallExpression callExpression = expression.Body as MethodCallExpression;
             var method = callExpression.Method;
-            return typeof(T).ToString() + typeof(PController).ToString() + method.Name + method.ReflectedType.FullName;
+            return GenerateKey(method);
+        }
+
+        /// <summary>
+        /// Generate special key
+        /// </summary>
+        /// <param name="resultType"></param>
+        /// <param name="methodInfo"></param>
+        /// <returns></returns>
+        protected string GenerateKey(MethodInfo methodInfo)
+        {
+            return typeof(T).ToString() + methodInfo.ReturnType.ToString() + methodInfo.Name + methodInfo.ReflectedType.FullName;
         }
     }
 }

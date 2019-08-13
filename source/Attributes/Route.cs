@@ -35,7 +35,7 @@ namespace Rest.API.Translator
         /// </summary>
         /// <param name="relativeUrl">api/ or ../api its a realtive path to the baseUrl</param>
         /// <param name="httpMethod"> Default Get</param>
-        /// <param name="fullUrl"> As full path , will ignore the baseUri and use the relativeUrl as full path.fullUrl Above the interface will mean that it will ignore the interface name and only the realtiveurl </param>
+        /// <param name="fullUrl"> As full path , will ignore the baseUri and use the relativeUrl as full path. fullUrl above the interface will mean that it will ignore the interface name and only use the reltiveurl </param>
         /// <param name="parameterIntendFormat">Instead of ?Name=test it will be /test</param>
         public Route(string relativeUrl = null, MethodType httpMethod = MethodType.GET, bool fullUrl = false, bool parameterIntendFormat= false)
         {

@@ -26,7 +26,7 @@ namespace Rest.API.Translator
         /// APIController
         /// </summary>
         /// <param name="baseUrl">The baseUrl for the rest api</param>
-        public APIController(string baseUrl)
+        public APIController(string baseUrl = null)
         {
             if (!typeof(T).IsInterface)
                 throw new Exception("Rest.API.Translator: T must be an interface");
@@ -101,11 +101,11 @@ namespace Rest.API.Translator
                 if (!cached || item.BaseUrl != BaseUrl)
                 {
                     var mRoute = _cachedMethodRoute.Exist(key) ? _cachedMethodRoute[key] : method.GetCustomAttribute<Route>();
-                    var classRoute = typeof(T).GetCustomAttribute<Route>()?.RelativeUrl ?? "";
-                    var controller = typeof(T).GetCustomAttribute<Route>() == null || !typeof(T).GetCustomAttribute<Route>().FullUrl ? ControllerNameResolver(typeof(T).Name) : "";
+                    var classRoute = _cachedTRoutes.Exist(typeof(T)) ? _cachedTRoutes[typeof(T)] : typeof(T).GetCustomAttribute<Route>();
+                    var controller = classRoute == null || !classRoute.FullUrl ? ControllerNameResolver(typeof(T).Name) : "";
                     item.ParameterIntendFormat = mRoute?.ParameterIntendFormat ?? false;
                     if (mRoute == null || !mRoute.FullUrl)
-                        item.FullUrl = Helper.UrlCombine(BaseUrl, classRoute, controller, (mRoute != null && !string.IsNullOrWhiteSpace(mRoute.RelativeUrl) ? mRoute.RelativeUrl : method.Name)).Replace("\\", "/");
+                        item.FullUrl = Helper.UrlCombine(BaseUrl, classRoute?.RelativeUrl, controller, (mRoute != null && !string.IsNullOrWhiteSpace(mRoute.RelativeUrl) ? mRoute.RelativeUrl : method.Name)).Replace("\\", "/");
                     else item.FullUrl = mRoute.RelativeUrl;
                     item.HttpMethod = mRoute?.HttpMethod ?? MethodType.GET;
                     item.BaseUrl = BaseUrl;
