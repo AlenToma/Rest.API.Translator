@@ -105,7 +105,7 @@ namespace Rest.API.Translator
                     var controller = classRoute == null || !classRoute.FullUrl ? ControllerNameResolver(typeof(T).Name) : "";
                     item.ParameterIntendFormat = mRoute?.ParameterIntendFormat ?? false;
                     if (mRoute == null || !mRoute.FullUrl)
-                        item.FullUrl = Helper.UrlCombine(BaseUrl, classRoute?.RelativeUrl, controller, (mRoute != null && !string.IsNullOrWhiteSpace(mRoute.RelativeUrl) ? mRoute.RelativeUrl : method.Name)).Replace("\\", "/");
+                        item.FullUrl = Helper.UrlCombine(BaseUrl, classRoute?.RelativeUrl, controller, (mRoute != null && !string.IsNullOrWhiteSpace(mRoute.RelativeUrl) ? mRoute.RelativeUrl : method.Name));
                     else item.FullUrl = mRoute.RelativeUrl;
                     item.HttpMethod = mRoute?.HttpMethod ?? MethodType.GET;
                     item.BaseUrl = BaseUrl;

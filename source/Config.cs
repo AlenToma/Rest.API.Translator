@@ -94,7 +94,6 @@ namespace Rest.API.Translator
         /// <summary>
         /// Generate special key
         /// </summary>
-        /// <param name="resultType"></param>
         /// <param name="methodInfo"></param>
         /// <returns></returns>
         protected string GenerateKey(MethodInfo methodInfo)

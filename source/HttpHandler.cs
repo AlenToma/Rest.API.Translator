@@ -24,6 +24,8 @@ namespace Rest.API.Translator
         /// <param name="httpClient"></param>
         public HttpHandler(HttpClient httpClient = null)
         {
+
+
             if (httpClient != null)
                 Client = httpClient;
             else
@@ -46,7 +48,6 @@ namespace Rest.API.Translator
                     // 
                 }
             }
-
         }
 
         /// <summary>
@@ -109,14 +110,18 @@ namespace Rest.API.Translator
             var content = new FormUrlEncodedContent(values);
             using (var response = await Client.PostAsync(new Uri(url), content))
             {
-                if (castToType != null)
+                if (response.IsSuccessStatusCode)
                 {
-                    var contents = await response.Content.ReadAsStringAsync();
-                    if (castToType == typeof(string))
-                        return contents;
-                    if (!string.IsNullOrEmpty(contents))
-                        return JsonConvert.DeserializeObject(contents, castToType);
+                    if (castToType != null)
+                    {
+                        var contents = await response.Content.ReadAsStringAsync();
+                        if (castToType == typeof(string))
+                            return contents;
+                        if (!string.IsNullOrEmpty(contents))
+                            return JsonConvert.DeserializeObject(contents, castToType);
+                    }
                 }
+                else throw new Exception(response.ReasonPhrase);
             }
             return null;
         }
@@ -147,16 +152,20 @@ namespace Rest.API.Translator
             HttpContent contentPost = new StringContent(json, Encoding.UTF8, "application/json");
             using (var response = await Client.PostAsync(new Uri(url), contentPost))
             {
-                if (castToType != null)
+                if (response.IsSuccessStatusCode)
                 {
-                    var contents = await response.Content.ReadAsStringAsync();
+                    if (castToType != null)
+                    {
+                        var contents = await response.Content.ReadAsStringAsync();
 
-                    if (castToType == typeof(string))
-                        return contents;
-                    if (!string.IsNullOrEmpty(contents))
-                        return JsonConvert.DeserializeObject(contents, castToType);
+                        if (castToType == typeof(string))
+                            return contents;
+                        if (!string.IsNullOrEmpty(contents))
+                            return JsonConvert.DeserializeObject(contents, castToType);
 
+                    }
                 }
+                else throw new Exception(response.ReasonPhrase);
             }
             return null;
         }
@@ -204,13 +213,19 @@ namespace Rest.API.Translator
                 }
             }
 
-            var responseString = await Client.GetStringAsync(new Uri(url));
-            if (castToType != null)
+            using (var response = await Client.GetAsync(new Uri(url)))
             {
-                if (castToType == typeof(string))
-                    return responseString;
-                if (!string.IsNullOrEmpty(responseString))
-                    return JsonConvert.DeserializeObject(responseString, castToType);
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseString = await response.Content.ReadAsStringAsync();
+                    if (castToType != null)
+                    {
+                        if (castToType == typeof(string))
+                            return responseString;
+                        if (!string.IsNullOrEmpty(responseString))
+                            return JsonConvert.DeserializeObject(responseString, castToType);
+                    }
+                } else throw new Exception(response.ReasonPhrase);
             }
 
             return null;
