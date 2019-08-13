@@ -9,13 +9,23 @@ using System.Threading.Tasks;
 
 namespace Rest.API.Translator
 {
+    /// <summary>
+    /// Here exist httpclient operations
+    /// </summary>
     public class HttpHandler : IDisposable
     {
-        private readonly HttpClient _client;
+        /// <summary>
+        /// Current HttpClient
+        /// </summary>
+        public readonly HttpClient Client;
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="httpClient"></param>
         public HttpHandler(HttpClient httpClient = null)
         {
             if (httpClient != null)
-                _client = httpClient;
+                Client = httpClient;
             else
             if (httpClient == null)
             {
@@ -29,7 +39,7 @@ namespace Rest.API.Translator
                     {
                         ClientCertificateOptions = ClientCertificateOption.Manual
                     };
-                    _client = new HttpClient(clientcert);
+                    Client = new HttpClient(clientcert);
                 }
                 catch
                 {
@@ -39,16 +49,37 @@ namespace Rest.API.Translator
 
         }
 
+        /// <summary>
+        /// Make a post operation, and serilize and post the perameter as json.
+        /// </summary>
+        /// <typeparam name="item">Desired type of returned data</typeparam>
+        /// <param name="url">FullUrl</param>
+        /// <param name="parameter"></param>
+        /// <returns></returns>
         public async Task<item> PostAsJsonAsync<item>(string url, object parameter)
         {
             return (item)await (PostAsJsonAsync(url, parameter, typeof(item)));
         }
 
-        public async Task<item> GetTAsync<item>(string url, object parameter = null)
+        /// <summary>
+        /// Make Get Operation
+        /// </summary>
+        /// <typeparam name="item">Desired type of returned data</typeparam>
+        /// <param name="url">FullUrl</param>
+        /// <param name="parameter"></param>
+        /// <returns></returns>
+        public async Task<item> GetAsync<item>(string url, object parameter = null)
         {
             return (item)await (GetAsync(url, parameter, typeof(item)));
         }
 
+        /// <summary>
+        /// Make a post operation
+        /// </summary>
+        /// <typeparam name="item">Desired type of returned data</typeparam>
+        /// <param name="url">FullUrl</param>
+        /// <param name="parameter"></param>
+        /// <returns></returns>
         public async Task<item> PostAsync<item>(string url, object parameter)
         {
             return (item)await (PostAsync(url, parameter, typeof(item)));
@@ -63,6 +94,8 @@ namespace Rest.API.Translator
         /// <returns></returns>
         public async Task<object> PostAsync(string url, object parameter, Type castToType = null)
         {
+            if (parameter is InternalDictionary<string, object>)
+                parameter = (parameter as InternalDictionary<string, object>).ToDictionary();
             if (parameter == null)
                 throw new Exception("POST operation need a parameters");
             var values = new Dictionary<string, string>();
@@ -74,11 +107,13 @@ namespace Rest.API.Translator
             }
 
             var content = new FormUrlEncodedContent(values);
-            using (var response = await _client.PostAsync(new Uri(url), content))
+            using (var response = await Client.PostAsync(new Uri(url), content))
             {
                 if (castToType != null)
                 {
                     var contents = await response.Content.ReadAsStringAsync();
+                    if (castToType == typeof(string))
+                        return contents;
                     if (!string.IsNullOrEmpty(contents))
                         return JsonConvert.DeserializeObject(contents, castToType);
                 }
@@ -97,13 +132,27 @@ namespace Rest.API.Translator
         {
             if (objectItem == null)
                 throw new Exception("POST operation need a parameters");
-            var item = objectItem is IDictionary<string, object> ? ((IDictionary<string, object>)objectItem).Values.FirstOrDefault() : objectItem;
-            HttpContent contentPost = new StringContent(JsonConvert.SerializeObject(item), Encoding.UTF8, "application/json");
-            using (var response = await _client.PostAsync(new Uri(url), contentPost))
+            if (objectItem is InternalDictionary<string, object>)
+                objectItem = (objectItem as InternalDictionary<string, object>).ToDictionary();
+            var dic = ((IDictionary<string, object>)objectItem);
+            string json = "";
+            if (dic != null)
+            {
+                if (dic.Values.Count > 1)
+                    json = JsonConvert.SerializeObject(objectItem, Formatting.Indented);
+                else json = JsonConvert.SerializeObject(dic.Values.FirstOrDefault());
+            }
+            else json = JsonConvert.SerializeObject(objectItem);
+
+            HttpContent contentPost = new StringContent(json, Encoding.UTF8, "application/json");
+            using (var response = await Client.PostAsync(new Uri(url), contentPost))
             {
                 if (castToType != null)
                 {
                     var contents = await response.Content.ReadAsStringAsync();
+
+                    if (castToType == typeof(string))
+                        return contents;
                     if (!string.IsNullOrEmpty(contents))
                         return JsonConvert.DeserializeObject(contents, castToType);
 
@@ -116,37 +165,63 @@ namespace Rest.API.Translator
         /// 
         /// </summary>
         /// <param name="url"></param>
-        /// <param name="parameters"></param>
+        /// <param name="parameter"></param>
         /// <param name="castToType">The return json should be converted to </param>
+        /// <param name="parameterIntendFormat">Instead of ?Name=test, it will be /test</param>
         /// <returns></returns>
-        public async Task<object> GetAsync(string url, object parameter = null, Type castToType = null)
+        public async Task<object> GetAsync(string url, object parameter = null, Type castToType = null, bool parameterIntendFormat = false)
         {
+            if (parameter is InternalDictionary<string, object>)
+                parameter = (parameter as InternalDictionary<string, object>).ToDictionary();
             if (parameter is IDictionary)
             {
                 if (parameter != null)
                 {
-                    url += "?" + string.Join("&", (parameter as Dictionary<string, object>).Select(x => $"{x.Key}={x.Value ?? ""}"));
+                    if (!parameterIntendFormat)
+                        url += "?" + string.Join("&", (parameter as Dictionary<string, object>).Select(x => $"{x.Key}={x.Value ?? ""}"));
+                    else
+                    {
+                        var arr = (parameter as Dictionary<string, object>).Select(x => x.Value?.ToString() ?? "").ToList();
+                        arr.Insert(0, url);
+                        url = Helper.UrlCombine(arr.ToArray());
+                    }
                 }
             }
             else
             {
                 var props = parameter?.GetType().GetProperties();
                 if (props != null)
-                    url += "?" + string.Join("&", props.Select(x => $"{x.Name}={x.GetValue(parameter)}"));
+                {
+                    if (!parameterIntendFormat)
+                        url += "?" + string.Join("&", props.Select(x => $"{x.Name}={x.GetValue(parameter)}"));
+                    else
+                    {
+                        var arr = props.Select(x => x.GetValue(parameter)?.ToString()).ToList();
+                        arr.Insert(0, url);
+                        url = Helper.UrlCombine(arr.ToArray());
+                    }
+
+                }
             }
 
-            var responseString = await _client.GetStringAsync(new Uri(url));
+            var responseString = await Client.GetStringAsync(new Uri(url));
             if (castToType != null)
             {
+                if (castToType == typeof(string))
+                    return responseString;
                 if (!string.IsNullOrEmpty(responseString))
                     return JsonConvert.DeserializeObject(responseString, castToType);
             }
 
             return null;
         }
+
+        /// <summary>
+        /// Dispose HttpClient
+        /// </summary>
         public void Dispose()
         {
-            _client.Dispose();
+            Client.Dispose();
         }
     }
 }

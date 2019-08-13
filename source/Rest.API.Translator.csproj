@@ -2,6 +2,16 @@
 
   <PropertyGroup>
     <TargetFrameworks>netcoreapp2.0;net46;netstandard2.0;</TargetFrameworks>
+    <Description>Rest.API.Translator is a small library that translate interface to valid rest api calls. So instead of using url for each methods, you only use interface and expression to build a valid call to your rest api.</Description>
+    <PackageProjectUrl>https://github.com/AlenToma/Rest.API.Translator</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/AlenToma/Rest.API.Translator</RepositoryUrl>
+    <PackageTags>HTTP; HttpClient; REST; api; Networking</PackageTags>
+    <Copyright>https://github.com/AlenToma/Rest.API.Translator/blob/master/LICENSE</Copyright>
+    <DocumentationFile>bin\Release\$(TargetFramework)\Rest.API.Translator.xml</DocumentationFile>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Version>1.0.2</Version>
+    <AssemblyVersion>1.0.1.2</AssemblyVersion>
+    <FileVersion>1.0.1.2</FileVersion>
   </PropertyGroup>
 
 

@@ -39,3 +39,6 @@ source/obj/Debug/netstandard1.0/Rest.API.Translator.csprojAssemblyReference.cach
 source/obj/Debug/netstandard1.3/Rest.API.Translator.AssemblyInfo.cs
 source/obj/Debug/netstandard1.3/Rest.API.Translator.AssemblyInfoInputs.cache
 source/obj/Debug/netstandard1.3/Rest.API.Translator.assets.cache
+/solution/.vs/Rest.API.Translator
+/source/bin
+/source/obj

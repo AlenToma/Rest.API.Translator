@@ -3,16 +3,25 @@ using System.Linq.Expressions;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Reflection;
-using System.IO;
-using FastDeepCloner;
 
 namespace Rest.API.Translator
 {
-    public class APIController<T> : IDisposable
+    /// <summary>
+    /// The api translator
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    public class APIController<T> : Config<T>, IDisposable
     {
-        private readonly string _baseUrl;
+        /// <summary>
+        /// The baseUrl
+        /// </summary>
+        public readonly string BaseUrl;
 
-        private readonly HttpHandler httpHandler;
+        /// <summary>
+        /// The httpClient
+        /// </summary>
+        public readonly HttpHandler HttpHandler;
+
         /// <summary>
         /// APIController
         /// </summary>
@@ -20,24 +29,26 @@ namespace Rest.API.Translator
         public APIController(string baseUrl)
         {
             if (!typeof(T).IsInterface)
-                throw new Exception("T must be an interface");
-            _baseUrl = baseUrl;
-            httpHandler = new HttpHandler();
+                throw new Exception("Rest.API.Translator: T must be an interface");
+            BaseUrl = baseUrl;
+            HttpHandler = new HttpHandler();
 
         }
+
+
         /// <summary>
-        /// APIController, Make sure that no baseaddress is not specified, as we already have baseUrl
+        /// APIController, Make sure that baseaddress is not specified, as we already have baseUrl
         /// </summary>
         /// <param name="baseUrl">The baseUrl for the rest api</param>
         /// <param name="client">your own HttpClient handler, if you would like to have your own HttpClient with your own settings</param>
         public APIController(HttpClient client, string baseUrl)
         {
             if (!typeof(T).IsInterface)
-                throw new Exception("T must be an interface");
-            _baseUrl = baseUrl;
+                throw new Exception("Rest.API.Translator: T must be an interface");
+            BaseUrl = baseUrl;
             if (client != null)
                 client.BaseAddress = null;
-            httpHandler = new HttpHandler(client);
+            HttpHandler = new HttpHandler(client);
         }
 
         /// <summary>
@@ -51,54 +62,66 @@ namespace Rest.API.Translator
             return name.Substring(1).Replace("Controller", "");
         }
 
-        private static SafeValueType<string, MethodInformation> _cachedMethodInformation = new SafeValueType<string, MethodInformation>();
         /// <summary>
         /// Extract the MethodInformation from the expression
         /// </summary>
-        /// <typeparam name="T"></typeparam>
         /// <typeparam name="P"></typeparam>
         /// <param name="expression"></param>
         /// <param name="skipArgs"></param>
         /// <returns></returns>
         public MethodInformation GetInfo<P>(Expression<Func<T, P>> expression, bool skipArgs = false)
         {
-            MethodCallExpression callExpression = expression.Body as MethodCallExpression;
-            var method = callExpression.Method;
-            var argument = callExpression.Arguments;
-            var key = typeof(T).ToString() + typeof(P).ToString() + method.Name + method.ReflectedType.FullName;
-            var cached = _cachedMethodInformation.ContainsKey(key);
-            var item = _cachedMethodInformation.GetOrAdd(key, new MethodInformation());
-
-            if (!cached)
+            lock (this)
             {
-                item.IsVoid = method.ReturnType == typeof(void) || method.ReturnType == typeof(Task);
-                if (method.ReturnType.IsGenericType && method.ReturnType.GetGenericTypeDefinition() == typeof(Task<>))
-                    item.CleanReturnType = method.ReturnType.GetActualType();
-                else item.CleanReturnType = method.ReturnType;
-            }
-            var index = 0;
-            item.Arguments.Clear();
-            if (!skipArgs)
-                foreach (var pr in method.GetParameters())
+                MethodCallExpression callExpression = expression.Body as MethodCallExpression;
+                var method = callExpression.Method;
+                var argument = callExpression.Arguments;
+                var key = GenerateKey(expression);
+                var cached = _cachedMethodInformation.Exist(key);
+                var item = _cachedMethodInformation.Add(key, new MethodInformation());
+
+                if (!cached)
                 {
-                    var arg = argument[index];
-                    var value = arg is ConstantExpression constExp ? constExp.Value : Expression.Lambda(arg).Compile().DynamicInvoke();
-                    item.Arguments.Add(pr.Name, value);
-                    index++;
+                    item.IsVoid = method.ReturnType == typeof(void) || method.ReturnType == typeof(Task);
+                    if (method.ReturnType.IsGenericType && method.ReturnType.GetGenericTypeDefinition() == typeof(Task<>))
+                        item.CleanReturnType = method.ReturnType.GetActualType();
+                    else item.CleanReturnType = method.ReturnType;
                 }
+                var index = 0;
+                item.Arguments.Clear();
+                if (!skipArgs)
+                    foreach (var pr in method.GetParameters())
+                    {
+                        var arg = argument[index];
+                        var value = arg is ConstantExpression constExp ? constExp.Value : Expression.Lambda(arg).Compile().DynamicInvoke();
+                        item.Arguments.Add(pr.Name, value);
+                        index++;
+                    }
 
-            if (!cached)
-            {
-                var mRoute = method.GetCustomAttribute<Route>();
-                var classRoute = typeof(T).GetCustomAttribute<Route>()?.RelativeUrl ?? "";
-                var controller = ControllerNameResolver(typeof(T).Name);
-                item.FullUrl = Path.Combine(_baseUrl, classRoute, controller, (mRoute != null && !string.IsNullOrWhiteSpace(mRoute.RelativeUrl) ? mRoute.RelativeUrl : method.Name)).Replace("\\", "/");
-                item.HttpMethod = mRoute?.HttpMethod ?? MethodType.GET;
+                if (!cached || item.BaseUrl != BaseUrl)
+                {
+                    var mRoute = _cachedMethodRoute.Exist(key) ? _cachedMethodRoute[key] : method.GetCustomAttribute<Route>();
+                    var classRoute = typeof(T).GetCustomAttribute<Route>()?.RelativeUrl ?? "";
+                    var controller = typeof(T).GetCustomAttribute<Route>() == null || !typeof(T).GetCustomAttribute<Route>().FullUrl ? ControllerNameResolver(typeof(T).Name) : "";
+                    item.ParameterIntendFormat = mRoute?.ParameterIntendFormat ?? false;
+                    if (mRoute == null || !mRoute.FullUrl)
+                        item.FullUrl = Helper.UrlCombine(BaseUrl, classRoute, controller, (mRoute != null && !string.IsNullOrWhiteSpace(mRoute.RelativeUrl) ? mRoute.RelativeUrl : method.Name)).Replace("\\", "/");
+                    else item.FullUrl = mRoute.RelativeUrl;
+                    item.HttpMethod = mRoute?.HttpMethod ?? MethodType.GET;
+                    item.BaseUrl = BaseUrl;
+                }
+                return item;
             }
-            return item;
         }
 
 
+
+        /// <summary>
+        /// Make your calls to the api
+        /// </summary>
+        /// <typeparam name="P"></typeparam>
+        /// <param name="expression"></param>
+        /// <returns></returns>
         public P Execute<P>(Expression<Func<T, P>> expression)
         {
             return AsyncExtension.Await(async () =>
@@ -108,13 +131,12 @@ namespace Rest.API.Translator
         }
 
         /// <summary>
-        /// ExecuteAsync
+        /// Make your calls to the api
         /// </summary>
         /// <typeparam name="P"></typeparam>
         /// <param name="expression"></param>
-        /// <param name="afterOperation">trigget after the operation is done(Optional)</param>
         /// <returns></returns>
-        private async Task<P> ExecuteAsync<P>(Expression<Func<T, P>> expression)
+        public async Task<P> ExecuteAsync<P>(Expression<Func<T, P>> expression)
         {
             object result = null;
             try
@@ -123,15 +145,15 @@ namespace Rest.API.Translator
                 switch (item?.HttpMethod ?? MethodType.GET)
                 {
                     case MethodType.GET:
-                        result = await httpHandler.GetAsync(item.FullUrl, item.Arguments, item.IsVoid ? null : item.CleanReturnType);
+                        result = await HttpHandler.GetAsync(item.FullUrl, item.Arguments, item.IsVoid ? null : item.CleanReturnType, item.ParameterIntendFormat);
                         break;
 
                     case MethodType.POST:
-                        result = await httpHandler.PostAsync(item.FullUrl, item.Arguments, item.IsVoid ? null : item.CleanReturnType);
+                        result = await HttpHandler.PostAsync(item.FullUrl, item.Arguments, item.IsVoid ? null : item.CleanReturnType);
                         break;
 
                     case MethodType.JSONPOST:
-                        result = await httpHandler.PostAsJsonAsync(item.FullUrl, item.Arguments, item.IsVoid ? null : item.CleanReturnType);
+                        result = await HttpHandler.PostAsJsonAsync(item.FullUrl, item.Arguments, item.IsVoid ? null : item.CleanReturnType);
                         break;
                 }
 
@@ -147,9 +169,12 @@ namespace Rest.API.Translator
             }
         }
 
+        /// <summary>
+        /// Dispose the httpclient
+        /// </summary>
         public void Dispose()
         {
-            httpHandler.Dispose();
+            HttpHandler.Dispose();
         }
     }
 }

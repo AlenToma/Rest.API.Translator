@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Rest.API.Translator
 {
-    public class DynamicTaskCompletionSource
+    internal class DynamicTaskCompletionSource
     {
         private static SafeValueType<Type, Type> SourceCacher = new SafeValueType<Type, Type>();
         private static SafeValueType<Type, IFastDeepClonerProperty> TaskProperty = new SafeValueType<Type, IFastDeepClonerProperty>();
