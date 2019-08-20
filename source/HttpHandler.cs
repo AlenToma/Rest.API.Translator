@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using FastDeepCloner;
+using Newtonsoft.Json;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -59,7 +60,7 @@ namespace Rest.API.Translator
         /// <returns></returns>
         public async Task<item> PostAsJsonAsync<item>(string url, object parameter)
         {
-            return (item)await (PostAsJsonAsync(url, parameter, typeof(item)));
+            return (item)(await PostAsJsonAsync(url, parameter, typeof(item)));
         }
 
         /// <summary>
@@ -71,7 +72,7 @@ namespace Rest.API.Translator
         /// <returns></returns>
         public async Task<item> GetAsync<item>(string url, object parameter = null)
         {
-            return (item)await (GetAsync(url, parameter, typeof(item)));
+            return (item)(await GetAsync(url, parameter, typeof(item)));
         }
 
         /// <summary>
@@ -108,7 +109,7 @@ namespace Rest.API.Translator
             }
 
             var content = new FormUrlEncodedContent(values);
-            using (var response = await Client.PostAsync(new Uri(url), content))
+            using (var response = Client.PostAsync(new Uri(url), content).Await())
             {
                 if (response.IsSuccessStatusCode)
                 {
@@ -137,20 +138,50 @@ namespace Rest.API.Translator
         {
             if (objectItem == null)
                 throw new Exception("POST operation need a parameters");
-            if (objectItem is InternalDictionary<string, object>)
-                objectItem = (objectItem as InternalDictionary<string, object>).ToDictionary();
+
+            var inter = objectItem as InternalDictionary<string, object>;
+            if (inter != null)
+                objectItem = inter.ToDictionary();
             var dic = ((IDictionary<string, object>)objectItem);
             string json = "";
             if (dic != null)
             {
                 if (dic.Values.Count > 1)
-                    json = JsonConvert.SerializeObject(objectItem, Formatting.Indented);
+                {
+                    var dictionary = new Dictionary<string, object>();
+                    var ch = "?";
+                    if (dic.Any(x => !(x.Value?.GetType().IsInternalType() ?? false)))
+                        foreach (var key in dic)
+                        {
+                            var type = inter != null ? inter.GetValueType(key.Key) : key.Value?.GetType();
+                            if (type?.IsInternalType() ?? true)
+                            {
+                                if (ch != null)
+                                {
+                                    if (!url.EndsWith("?"))
+                                        url += ch;
+                                    ch = null;
+                                }
+                                url = $"{url}{key.Key}={key.Value}&";
+                            }
+                            else dictionary.Add(key.Key, key.Value);
+
+
+
+
+                        }
+                    url = url.TrimEnd('&');
+                    if (dictionary.Values.Count > 1)
+                        json = JsonConvert.SerializeObject(dictionary, Formatting.Indented);
+                    else json = JsonConvert.SerializeObject(dictionary.Values.FirstOrDefault());
+
+                }
                 else json = JsonConvert.SerializeObject(dic.Values.FirstOrDefault());
             }
             else json = JsonConvert.SerializeObject(objectItem);
 
             HttpContent contentPost = new StringContent(json, Encoding.UTF8, "application/json");
-            using (var response = await Client.PostAsync(new Uri(url), contentPost))
+            using (var response = Client.PostAsync(new Uri(url), contentPost).Await())
             {
                 if (response.IsSuccessStatusCode)
                 {
@@ -213,7 +244,7 @@ namespace Rest.API.Translator
                 }
             }
 
-            using (var response = await Client.GetAsync(new Uri(url)))
+            using (var response = Client.GetAsync(new Uri(url)).Await())
             {
                 if (response.IsSuccessStatusCode)
                 {
@@ -225,7 +256,8 @@ namespace Rest.API.Translator
                         if (!string.IsNullOrEmpty(responseString))
                             return JsonConvert.DeserializeObject(responseString, castToType);
                     }
-                } else throw new Exception(response.ReasonPhrase);
+                }
+                else throw new Exception(response.ReasonPhrase);
             }
 
             return null;

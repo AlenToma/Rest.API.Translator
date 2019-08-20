@@ -9,11 +9,10 @@
     <Copyright>https://github.com/AlenToma/Rest.API.Translator/blob/master/LICENSE</Copyright>
     <DocumentationFile>bin\Release\$(TargetFramework)\Rest.API.Translator.xml</DocumentationFile>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>1.0.4</Version>
-    <AssemblyVersion>1.0.1.4</AssemblyVersion>
-    <FileVersion>1.0.1.4</FileVersion>
-    <PackageReleaseNotes>Added AddInterfaceRoute for dynamicly add [Route] Settings intead of attributes
-Added AddMethodRoute  for dynamicly add [Route] Settings intead of attributes</PackageReleaseNotes>
+    <Version>1.0.5</Version>
+    <AssemblyVersion>1.0.1.5</AssemblyVersion>
+    <FileVersion>1.0.1.5</FileVersion>
+    <PackageReleaseNotes>Smal fix for mono, freezing issue</PackageReleaseNotes>
   </PropertyGroup>
 
 

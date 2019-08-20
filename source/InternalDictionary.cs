@@ -1,4 +1,5 @@
 ﻿using FastDeepCloner;
+using System;
 using System.Collections.Generic;
 
 namespace Rest.API.Translator
@@ -11,6 +12,8 @@ namespace Rest.API.Translator
     public class InternalDictionary<T, P>
     {
         private SafeValueType<T, P> keyValuePairs = new SafeValueType<T, P>();
+
+        private SafeValueType<T, Type> types = new SafeValueType<T, Type>();
         internal InternalDictionary(Dictionary<T, P> dic = null)
         {
             keyValuePairs = new SafeValueType<T, P>(dic);
@@ -26,11 +29,17 @@ namespace Rest.API.Translator
             get => keyValuePairs.Get(key);
         }
 
-        internal P Add(T key, P value, bool overwrite = false)
+        internal P Add(T key, P value, Type type = null, bool overwrite = false)
         {
+            types.TryAdd(key, type, overwrite);
             return keyValuePairs.GetOrAdd(key, value, overwrite);
         }
 
+
+        internal Type GetValueType(T key)
+        {
+            return types.Get(key);
+        }
 
         /// <summary>
         /// Get the values
@@ -49,7 +58,7 @@ namespace Rest.API.Translator
         /// <returns></returns>
         public bool Exist(T key) { return keyValuePairs.ContainsKey(key); }
 
-        internal Dictionary<T,P> ToDictionary()
+        internal Dictionary<T, P> ToDictionary()
         {
             return keyValuePairs;
         }

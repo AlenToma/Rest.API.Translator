@@ -94,7 +94,7 @@ namespace Rest.API.Translator
                     {
                         var arg = argument[index];
                         var value = arg is ConstantExpression constExp ? constExp.Value : Expression.Lambda(arg).Compile().DynamicInvoke();
-                        item.Arguments.Add(pr.Name, value);
+                        item.Arguments.Add(pr.Name, value, arg.Type);
                         index++;
                     }
 
