@@ -142,7 +142,7 @@ namespace Rest.API.Translator
             var inter = objectItem as InternalDictionary<string, object>;
             if (inter != null)
                 objectItem = inter.ToDictionary();
-            var dic = ((IDictionary<string, object>)objectItem);
+            var dic = ((Dictionary<string, object>)objectItem);
             string json = "";
             if (dic != null)
             {
@@ -150,7 +150,8 @@ namespace Rest.API.Translator
                 {
                     var dictionary = new Dictionary<string, object>();
                     var ch = "?";
-                    if (dic.Any(x => !(x.Value?.GetType().IsInternalType() ?? false)))
+                    if (dic.Any(x => !(x.Value?.GetType().IsInternalType() ?? false)) || (inter?.Keys.Any(x => inter.GetValueType(x).IsInternalType()) ?? false))
+                    {
                         foreach (var key in dic)
                         {
                             var type = inter != null ? inter.GetValueType(key.Key) : key.Value?.GetType();
@@ -165,11 +166,9 @@ namespace Rest.API.Translator
                                 url = $"{url}{key.Key}={key.Value}&";
                             }
                             else dictionary.Add(key.Key, key.Value);
-
-
-
-
                         }
+                    }
+                    else dictionary = dic;
                     url = url.TrimEnd('&');
                     if (dictionary.Values.Count > 1)
                         json = JsonConvert.SerializeObject(dictionary, Formatting.Indented);

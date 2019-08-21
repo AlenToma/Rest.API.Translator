@@ -9,10 +9,10 @@
     <Copyright>https://github.com/AlenToma/Rest.API.Translator/blob/master/LICENSE</Copyright>
     <DocumentationFile>bin\Release\$(TargetFramework)\Rest.API.Translator.xml</DocumentationFile>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>1.0.5</Version>
-    <AssemblyVersion>1.0.1.5</AssemblyVersion>
-    <FileVersion>1.0.1.5</FileVersion>
-    <PackageReleaseNotes>Smal fix for mono, freezing issue</PackageReleaseNotes>
+    <Version>1.0.7</Version>
+    <AssemblyVersion>1.0.1.6</AssemblyVersion>
+    <FileVersion>1.0.1.6</FileVersion>
+    <PackageReleaseNotes>JSONPOST able to handle more parameters</PackageReleaseNotes>
   </PropertyGroup>
 
 
