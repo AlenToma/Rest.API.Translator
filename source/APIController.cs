@@ -3,6 +3,7 @@ using System.Linq.Expressions;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Reflection;
+using Rest.API.Translator.Attributes;
 
 namespace Rest.API.Translator
 {
@@ -92,9 +93,10 @@ namespace Rest.API.Translator
                 if (!skipArgs)
                     foreach (var pr in method.GetParameters())
                     {
+                        var attr = pr.GetCustomAttribute<FromQuaryAttribute>();
                         var arg = argument[index];
                         var value = arg is ConstantExpression constExp ? constExp.Value : Expression.Lambda(arg).Compile().DynamicInvoke();
-                        item.Arguments.Add(pr.Name, value, arg.Type);
+                        item.Arguments.Add(pr.Name, value, arg.Type, attr);
                         index++;
                     }
 

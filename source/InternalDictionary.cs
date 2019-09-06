@@ -1,6 +1,7 @@
 ﻿using FastDeepCloner;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Rest.API.Translator
 {
@@ -11,9 +12,12 @@ namespace Rest.API.Translator
     /// <typeparam name="P"></typeparam>
     public class InternalDictionary<T, P>
     {
-        private SafeValueType<T, P> keyValuePairs = new SafeValueType<T, P>();
+        private readonly SafeValueType<T, P> keyValuePairs = new SafeValueType<T, P>();
 
-        private SafeValueType<T, Type> types = new SafeValueType<T, Type>();
+        private readonly SafeValueType<T, Type> types = new SafeValueType<T, Type>();
+
+        private readonly SafeValueType<T, Attribute> attributes = new SafeValueType<T, Attribute>();
+
         internal InternalDictionary(Dictionary<T, P> dic = null)
         {
             keyValuePairs = new SafeValueType<T, P>(dic);
@@ -29,8 +33,14 @@ namespace Rest.API.Translator
             get => keyValuePairs.Get(key);
         }
 
-        internal P Add(T key, P value, Type type = null, bool overwrite = false)
+        internal P Add(T key, P value, bool overwrite = false)
         {
+            return keyValuePairs.GetOrAdd(key, value, overwrite);
+        }
+
+        internal P Add(T key, P value, Type type, Attribute attr = null, bool overwrite = false)
+        {
+            attributes.TryAdd(key, attr, overwrite);
             types.TryAdd(key, type, overwrite);
             return keyValuePairs.GetOrAdd(key, value, overwrite);
         }
@@ -39,6 +49,11 @@ namespace Rest.API.Translator
         internal Type GetValueType(T key)
         {
             return types.Get(key);
+        }
+
+        internal object GetAttribute<Item>(T key) where Item : Attribute
+        {
+            return attributes.Get(key) as Item;
         }
 
         /// <summary>
@@ -60,7 +75,7 @@ namespace Rest.API.Translator
 
         internal Dictionary<T, P> ToDictionary()
         {
-            return keyValuePairs;
+            return keyValuePairs.Keys.ToDictionary(x => x, x => keyValuePairs[x]);
         }
 
         internal void Clear()

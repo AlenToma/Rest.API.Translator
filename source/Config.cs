@@ -55,7 +55,7 @@ namespace Rest.API.Translator
             var route = new Route(relativeUrl, httpMethod, fullUrl, parameterIntendFormat);
             var method = typeof(T).GetMethod(nameofMethod);
             var key = GenerateKey(method);
-            _cachedMethodRoute.Add(key, route,null, true);
+            _cachedMethodRoute.Add(key, route, true);
             return this;
         }
 
@@ -74,7 +74,7 @@ namespace Rest.API.Translator
             bool parameterIntendFormat = false)
         {
             var route = new Route(relativeUrl, httpMethod, fullUrl, parameterIntendFormat);
-            _cachedTRoutes.Add(typeof(T), route,null, true);
+            _cachedTRoutes.Add(typeof(T), route, true);
             return this;
         }
 

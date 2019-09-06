@@ -1,5 +1,6 @@
 ﻿using FastDeepCloner;
 using Newtonsoft.Json;
+using Rest.API.Translator.Attributes;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -34,6 +35,7 @@ namespace Rest.API.Translator
             {
                 try
                 {
+
                     System.Net.ServicePointManager.ServerCertificateValidationCallback += (sender, cert, chain, sslPolicyErrors) =>
                     {
                         return true;
@@ -43,6 +45,7 @@ namespace Rest.API.Translator
                         ClientCertificateOptions = ClientCertificateOption.Manual
                     };
                     Client = new HttpClient(clientcert);
+
                 }
                 catch
                 {
@@ -96,19 +99,36 @@ namespace Rest.API.Translator
         /// <returns></returns>
         public async Task<object> PostAsync(string url, object parameter, Type castToType = null)
         {
-            if (parameter is InternalDictionary<string, object>)
-                parameter = (parameter as InternalDictionary<string, object>).ToDictionary();
-            if (parameter == null)
-                throw new Exception("POST operation need a parameters");
+            var intern = parameter as InternalDictionary<string, object>;
+            if (intern != null)
+                parameter = intern.ToDictionary();
+
+            if (intern != null)
+            {
+                foreach (var key in intern.Keys)
+                {
+                    if (intern.GetAttribute<FromQuaryAttribute>(key) != null)
+                    {
+                        if (!url.Contains("?"))
+                            url += $"?{key}={intern[key]}&";
+                        else url += $"{key}={intern[key]}&";
+                        (parameter as Dictionary<string, object>).Remove(key);
+                    }
+                }
+            }
+            url = url.TrimEnd('&');
             var values = new Dictionary<string, string>();
             if (parameter is Dictionary<string, object>)
-                values = (parameter as Dictionary<string, object>).ToDictionary(x => x.Key, x => x.Value?.ToString());
+            {
+                if ((parameter as Dictionary<string, object>).Any())
+                    values = (parameter as Dictionary<string, object>).ToDictionary(x => x.Key, x => x.Value?.ToString());
+            }
             else
             {
                 values = parameter.GetType().GetProperties().ToDictionary(x => x.Name, x => x.GetValue(parameter)?.ToString());
             }
 
-            var content = new FormUrlEncodedContent(values);
+            var content = values.Any() ? new FormUrlEncodedContent(values) : null;
             using (var response = Client.PostAsync(new Uri(url), content).Await())
             {
                 if (response.IsSuccessStatusCode)
