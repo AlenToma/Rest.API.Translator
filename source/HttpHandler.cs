@@ -159,43 +159,68 @@ namespace Rest.API.Translator
             if (objectItem == null)
                 throw new Exception("POST operation need a parameters");
 
-            var inter = objectItem as InternalDictionary<string, object>;
-            if (inter != null)
-                objectItem = inter.ToDictionary();
+            var intern = objectItem as InternalDictionary<string, object>;
+            if (intern != null)
+                objectItem = intern.ToDictionary();
             var dic = ((Dictionary<string, object>)objectItem);
             string json = "";
+
+
             if (dic != null)
             {
+                var dictionary = new Dictionary<string, object>();
+
                 if (dic.Values.Count > 1)
                 {
-                    var dictionary = new Dictionary<string, object>();
-                    var ch = "?";
-                    if (dic.Any(x => !(x.Value?.GetType().IsInternalType() ?? false)) || (inter?.Keys.Any(x => inter.GetValueType(x).IsInternalType()) ?? false))
+                    if (intern != null)
                     {
-                        foreach (var key in dic)
+                        foreach (var key in intern.Keys)
                         {
-                            var type = inter != null ? inter.GetValueType(key.Key) : key.Value?.GetType();
-                            if (type?.IsInternalType() ?? true)
+                            if (intern.GetAttribute<FromQuaryAttribute>(key) != null)
                             {
-                                if (ch != null)
-                                {
-                                    if (!url.EndsWith("?"))
-                                        url += ch;
-                                    ch = null;
-                                }
-                                url = $"{url}{key.Key}={key.Value}&";
+                                if (!url.Contains("?"))
+                                    url += $"?{key}={intern[key]}&";
+                                else url += $"{key}={intern[key]}&";
+                                dic.Remove(key);
                             }
-                            else dictionary.Add(key.Key, key.Value);
                         }
+
+                        dictionary = dic;
+
                     }
-                    else dictionary = dic;
+                    else
+                    {
+
+                        var ch = "?";
+                        if (dic.Any(x => !(x.Value?.GetType().IsInternalType() ?? false)) || (intern?.Keys.Any(x => intern.GetValueType(x).IsInternalType()) ?? false))
+                        {
+                            foreach (var key in dic)
+                            {
+                                var type = intern != null ? intern.GetValueType(key.Key) : key.Value?.GetType();
+                                if (type?.IsInternalType() ?? true)
+                                {
+                                    if (ch != null)
+                                    {
+                                        if (!url.EndsWith("?"))
+                                            url += ch;
+                                        ch = null;
+                                    }
+                                    url = $"{url}{key.Key}={key.Value}&";
+                                }
+                                else dictionary.Add(key.Key, key.Value);
+                            }
+                        }
+                        else dictionary = dic;
+                    }
                     url = url.TrimEnd('&');
                     if (dictionary.Values.Count > 1)
                         json = JsonConvert.SerializeObject(dictionary, Formatting.Indented);
                     else json = JsonConvert.SerializeObject(dictionary.Values.FirstOrDefault());
 
+
                 }
                 else json = JsonConvert.SerializeObject(dic.Values.FirstOrDefault());
+
             }
             else json = JsonConvert.SerializeObject(objectItem);
 
