@@ -36,10 +36,10 @@ namespace Rest.API.Translator
                 try
                 {
 
-                    System.Net.ServicePointManager.ServerCertificateValidationCallback += (sender, cert, chain, sslPolicyErrors) =>
-                    {
-                        return true;
-                    };
+                    //System.Net.ServicePointManager.ServerCertificateValidationCallback += (sender, cert, chain, sslPolicyErrors) =>
+                    //{
+                    //    return true;
+                    //};
                     var clientcert = new HttpClientHandler
                     {
                         ClientCertificateOptions = ClientCertificateOption.Manual

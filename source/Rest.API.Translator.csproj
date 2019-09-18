@@ -9,10 +9,11 @@
     <Copyright>https://github.com/AlenToma/Rest.API.Translator/blob/master/LICENSE</Copyright>
     <DocumentationFile>bin\Release\$(TargetFramework)\Rest.API.Translator.xml</DocumentationFile>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>1.0.7</Version>
-    <AssemblyVersion>1.0.1.6</AssemblyVersion>
-    <FileVersion>1.0.1.6</FileVersion>
-    <PackageReleaseNotes>JSONPOST able to handle more parameters</PackageReleaseNotes>
+    <Version>1.0.9</Version>
+    <AssemblyVersion>1.0.1.9</AssemblyVersion>
+    <FileVersion>1.0.1.9</FileVersion>
+    <PackageReleaseNotes>Rename FromQuaryAttribute to FromQueryAttribute
+Optimiaze httpclient calls</PackageReleaseNotes>
   </PropertyGroup>
 
 
