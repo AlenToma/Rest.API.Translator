@@ -107,7 +107,7 @@ namespace Rest.API.Translator
             {
                 foreach (var key in intern.Keys)
                 {
-                    if (intern.GetAttribute<FromQuaryAttribute>(key) != null)
+                    if (intern.GetAttribute<FromQueryAttribute>(key) != null)
                     {
                         if (!url.Contains("?"))
                             url += $"?{key}={intern[key]}&";
@@ -176,7 +176,7 @@ namespace Rest.API.Translator
                     {
                         foreach (var key in intern.Keys)
                         {
-                            if (intern.GetAttribute<FromQuaryAttribute>(key) != null)
+                            if (intern.GetAttribute<FromQueryAttribute>(key) != null)
                             {
                                 if (!url.Contains("?"))
                                     url += $"?{key}={intern[key]}&";

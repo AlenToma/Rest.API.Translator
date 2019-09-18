@@ -93,7 +93,7 @@ namespace Rest.API.Translator
                 if (!skipArgs)
                     foreach (var pr in method.GetParameters())
                     {
-                        var attr = pr.GetCustomAttribute<FromQuaryAttribute>();
+                        var attr = pr.GetCustomAttribute<FromQueryAttribute>();
                         var arg = argument[index];
                         var value = arg is ConstantExpression constExp ? constExp.Value : Expression.Lambda(arg).Compile().DynamicInvoke();
                         item.Arguments.Add(pr.Name, value, arg.Type, attr);
