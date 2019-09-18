@@ -7,7 +7,7 @@ namespace Rest.API.Translator.Attributes
     /// this is only applied to HttpPost
     /// </summary>
     [AttributeUsage(AttributeTargets.Parameter)]
-    public class FromQuaryAttribute : Attribute
+    public class FromQueryAttribute : Attribute
     {
     }
 }
