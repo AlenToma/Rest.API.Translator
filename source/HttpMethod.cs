@@ -17,6 +17,10 @@
         /// <summary>
         /// POST AN OBJECT as Json 
         /// </summary>
-        JSONPOST
+        JSONPOST,
+        /// <summary>
+        /// Download HTML, using this is much faster then GET
+        /// </summary>
+        HTML
     }
 }

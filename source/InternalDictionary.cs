@@ -18,7 +18,9 @@ namespace Rest.API.Translator
 
         private readonly SafeValueType<T, Attribute> attributes = new SafeValueType<T, Attribute>();
 
-        internal InternalDictionary(Dictionary<T, P> dic = null)
+        public Dictionary<string, string> Headers { get; } = new Dictionary<string, string>();
+
+        public InternalDictionary(Dictionary<T, P> dic = null)
         {
             keyValuePairs = new SafeValueType<T, P>(dic);
         }

@@ -3,7 +3,8 @@ using System.Linq.Expressions;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Reflection;
-using Rest.API.Translator.Attributes;
+using System.Linq;
+using System.Net.Http.Headers;
 
 namespace Rest.API.Translator
 {
@@ -27,12 +28,12 @@ namespace Rest.API.Translator
         /// APIController
         /// </summary>
         /// <param name="baseUrl">The baseUrl for the rest api</param>
-        public APIController(string baseUrl = null)
+        public APIController(string baseUrl = null, Action<HttpRequestHeaders> onAuth = null)
         {
             if (!typeof(T).IsInterface)
                 throw new Exception("Rest.API.Translator: T must be an interface");
             BaseUrl = baseUrl;
-            HttpHandler = new HttpHandler();
+            HttpHandler = new HttpHandler(null, onAuth);
 
         }
 
@@ -102,12 +103,16 @@ namespace Rest.API.Translator
 
                 if (!cached || item.BaseUrl != BaseUrl)
                 {
+                    var headerAttr = method.GetCustomAttributes<Header>();
+                    if (headerAttr != null && headerAttr.Count() > 0)
+                        foreach (var h in headerAttr)
+                            item.Arguments.Headers.Add(h.Name, h.Value);
                     var mRoute = _cachedMethodRoute.Exist(key) ? _cachedMethodRoute[key] : method.GetCustomAttribute<Route>();
                     var classRoute = _cachedTRoutes.Exist(typeof(T)) ? _cachedTRoutes[typeof(T)] : typeof(T).GetCustomAttribute<Route>();
                     var controller = classRoute == null || !classRoute.FullUrl ? ControllerNameResolver(typeof(T).Name) : "";
                     item.ParameterIntendFormat = mRoute?.ParameterIntendFormat ?? false;
                     if (mRoute == null || !mRoute.FullUrl)
-                        item.FullUrl = Helper.UrlCombine(BaseUrl, classRoute?.RelativeUrl, controller, (mRoute != null && !string.IsNullOrWhiteSpace(mRoute.RelativeUrl) ? mRoute.RelativeUrl : method.Name));
+                        item.FullUrl = Helper.UrlCombine(BaseUrl, classRoute?.RelativeUrl, controller, (mRoute != null && mRoute.RelativeUrl != null ? mRoute.RelativeUrl : method.Name));
                     else item.FullUrl = mRoute.RelativeUrl;
                     item.HttpMethod = mRoute?.HttpMethod ?? MethodType.GET;
                     item.BaseUrl = BaseUrl;
@@ -126,10 +131,7 @@ namespace Rest.API.Translator
         /// <returns></returns>
         public P Execute<P>(Expression<Func<T, P>> expression)
         {
-            return AsyncExtension.Await(async () =>
-            {
-                return await ExecuteAsync(expression);
-            });
+           return ExecuteAsync(expression).Await();
         }
 
         /// <summary>
@@ -156,6 +158,9 @@ namespace Rest.API.Translator
 
                     case MethodType.JSONPOST:
                         result = await HttpHandler.PostAsJsonAsync(item.FullUrl, item.Arguments, item.IsVoid ? null : item.CleanReturnType);
+                        break;
+                    case MethodType.HTML:
+                        result = HttpHandler.DownloadWebPage(item.FullUrl, item.Arguments, item.ParameterIntendFormat);
                         break;
                 }
 
