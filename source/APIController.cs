@@ -14,6 +14,7 @@ namespace Rest.API.Translator
     /// <typeparam name="T"></typeparam>
     public class APIController<T> : Config<T>, IDisposable
     {
+        private static object locker = new object();
         /// <summary>
         /// The baseUrl
         /// </summary>
@@ -131,7 +132,7 @@ namespace Rest.API.Translator
         /// <returns></returns>
         public P Execute<P>(Expression<Func<T, P>> expression)
         {
-           return ExecuteAsync(expression).Await();
+            return ExecuteAsync(expression).Await();
         }
 
         /// <summary>
@@ -142,37 +143,40 @@ namespace Rest.API.Translator
         /// <returns></returns>
         public async Task<P> ExecuteAsync<P>(Expression<Func<T, P>> expression)
         {
-            object result = null;
-            try
+            lock (locker)
             {
-                MethodInformation item = GetInfo(expression);
-                switch (item?.HttpMethod ?? MethodType.GET)
+                object result = null;
+                try
                 {
-                    case MethodType.GET:
-                        result = await HttpHandler.GetAsync(item.FullUrl, item.Arguments, item.IsVoid ? null : item.CleanReturnType, item.ParameterIntendFormat);
-                        break;
+                    MethodInformation item = GetInfo(expression);
+                    switch (item?.HttpMethod ?? MethodType.GET)
+                    {
+                        case MethodType.GET:
+                            result = HttpHandler.GetAsync(item.FullUrl, item.Arguments, item.IsVoid ? null : item.CleanReturnType, item.ParameterIntendFormat).Await();
+                            break;
 
-                    case MethodType.POST:
-                        result = await HttpHandler.PostAsync(item.FullUrl, item.Arguments, item.IsVoid ? null : item.CleanReturnType);
-                        break;
+                        case MethodType.POST:
+                            result = HttpHandler.PostAsync(item.FullUrl, item.Arguments, item.IsVoid ? null : item.CleanReturnType).Await();
+                            break;
 
-                    case MethodType.JSONPOST:
-                        result = await HttpHandler.PostAsJsonAsync(item.FullUrl, item.Arguments, item.IsVoid ? null : item.CleanReturnType);
-                        break;
-                    case MethodType.HTML:
-                        result = HttpHandler.DownloadWebPage(item.FullUrl, item.Arguments, item.ParameterIntendFormat);
-                        break;
+                        case MethodType.JSONPOST:
+                            result = HttpHandler.PostAsJsonAsync(item.FullUrl, item.Arguments, item.IsVoid ? null : item.CleanReturnType).Await();
+                            break;
+                        case MethodType.HTML:
+                            result = HttpHandler.DownloadWebPage(item.FullUrl, item.Arguments, item.ParameterIntendFormat);
+                            break;
+                    }
+
+                    if (typeof(P).IsGenericType && typeof(P).GetGenericTypeDefinition() == typeof(Task<>))
+                        result = new DynamicTaskCompletionSource(result, item.CleanReturnType).Task;
+                    else if (item.IsVoid) result = Task.CompletedTask;
+                    return (P)result;
+
                 }
-
-                if (typeof(P).IsGenericType && typeof(P).GetGenericTypeDefinition() == typeof(Task<>))
-                    result = new DynamicTaskCompletionSource(result, item.CleanReturnType).Task;
-                else if (item.IsVoid) result = Task.CompletedTask;
-                return (P)result;
-
-            }
-            catch (Exception e)
-            {
-                throw e;
+                catch (Exception e)
+                {
+                    throw e;
+                }
             }
         }
 

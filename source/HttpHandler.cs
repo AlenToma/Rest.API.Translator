@@ -18,7 +18,7 @@ namespace Rest.API.Translator
     /// </summary>
     public class HttpHandler : IDisposable
     {
-        private Action<HttpRequestHeaders> OnAuth;
+        public Action<HttpRequestHeaders> OnAuth;
 
         /// <summary>
         /// Current HttpClient
@@ -135,9 +135,9 @@ namespace Rest.API.Translator
                 {
                     values = parameter.GetType().GetProperties().ToDictionary(x => x.Name, x => x.GetValue(parameter)?.ToString());
                 }
-                content= values.Any() ? new FormUrlEncodedContent(values) : null;
+                content = values.Any() ? new FormUrlEncodedContent(values) : null;
             }
-             
+
 
             if (intern != null)
             {
@@ -158,11 +158,18 @@ namespace Rest.API.Translator
                     {
                         if (castToType != null)
                         {
-                            var contents = await response.Content.ReadAsStringAsync();
-                            if (castToType == typeof(string))
-                                return contents;
-                            if (!string.IsNullOrEmpty(contents))
-                                return JsonConvert.DeserializeObject(contents, castToType);
+                            using (Stream s = await response.Content.ReadAsStreamAsync())
+                            using (StreamReader sr = new StreamReader(s))
+                            {
+                                if (castToType == typeof(string))
+                                    return sr.ReadToEnd();
+
+                                using (JsonReader reader = new JsonTextReader(sr))
+                                {
+                                    JsonSerializer serializer = new JsonSerializer();
+                                    return serializer.Deserialize(reader, castToType);
+                                }
+                            }
                         }
                     }
                     else throw new Exception(response.ReasonPhrase);
@@ -278,13 +285,18 @@ namespace Rest.API.Translator
                     {
                         if (castToType != null)
                         {
-                            var contents = await response.Content.ReadAsStringAsync();
+                            using (Stream s = await response.Content.ReadAsStreamAsync())
+                            using (StreamReader sr = new StreamReader(s))
+                            {
+                                if (castToType == typeof(string))
+                                    return sr.ReadToEnd();
 
-                            if (castToType == typeof(string))
-                                return contents;
-                            if (!string.IsNullOrEmpty(contents))
-                                return JsonConvert.DeserializeObject(contents, castToType);
-
+                                using (JsonReader reader = new JsonTextReader(sr))
+                                {
+                                    JsonSerializer serializer = new JsonSerializer();
+                                    return serializer.Deserialize(reader, castToType);
+                                }
+                            }
                         }
                     }
                     else throw new Exception(response.ReasonPhrase);
@@ -319,7 +331,7 @@ namespace Rest.API.Translator
                 if (parameter != null)
                 {
                     if (!parameterIntendFormat)
-                        url += (!url.Contains("?") ? "?": "") + string.Join("&", (parameter as Dictionary<string, object>).Select(x => $"{x.Key}={x.Value ?? ""}"));
+                        url += (!url.Contains("?") ? "?" : "") + string.Join("&", (parameter as Dictionary<string, object>).Select(x => $"{x.Key}={x.Value ?? ""}"));
                     else
                     {
                         var arr = (parameter as Dictionary<string, object>).Select(x => x.Value?.ToString() ?? "").ToList();
@@ -381,13 +393,20 @@ namespace Rest.API.Translator
 
                     if (response.IsSuccessStatusCode)
                     {
-                        var responseString = await response.Content.ReadAsStringAsync();
                         if (castToType != null)
                         {
-                            if (castToType == typeof(string))
-                                return responseString;
-                            if (!string.IsNullOrEmpty(responseString))
-                                return JsonConvert.DeserializeObject(responseString, castToType);
+                            using (Stream s = await response.Content.ReadAsStreamAsync())
+                            using (StreamReader sr = new StreamReader(s))
+                            {
+                                if (castToType == typeof(string))
+                                    return sr.ReadToEnd();
+
+                                using (JsonReader reader = new JsonTextReader(sr))
+                                {
+                                    JsonSerializer serializer = new JsonSerializer();
+                                    return serializer.Deserialize(reader, castToType);
+                                }
+                            }
                         }
                     }
                     else throw new Exception(response.ReasonPhrase);
